@@ -24,12 +24,11 @@ public class JwtUtil {
                         secret.getBytes(StandardCharsets.UTF_8), Jwts.SIG.HS256.key().build().getAlgorithm());
     }
 
-    public String createJwt(Long id, String type, String role, String issuer, Long expiredMs) {
+    public String createJwt(String username, String type, String issuer, Long expiredMs) {
 
         return Jwts.builder()
-                .claim("id", id)
+                .claim("username", username)
                 .claim("type", type)
-                .claim("role", role)
                 .claim("iss", issuer)
 
                 .issuedAt(new Date(System.currentTimeMillis()))
@@ -38,24 +37,15 @@ public class JwtUtil {
                 .compact();
     }
 
-    public Long getId(String token) {
+
+    public String getUsername(String token) {
 
         return Jwts.parser()
                 .verifyWith(secretKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload()
-                .get("id", Long.class);
-    }
-
-    public String getRole(String token) {
-
-        return Jwts.parser()
-                .verifyWith(secretKey)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
-                .get("role", String.class);
+                .get("username", String.class);
     }
 
     public Boolean isExpired(String token) {

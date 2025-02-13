@@ -1,6 +1,5 @@
 package com.suyeon.suyeon.config;
 
-import com.suyeon.suyeon.repository.MemberRepository;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
@@ -9,6 +8,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -19,10 +19,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 
+@Slf4j
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter{
 
@@ -47,40 +47,10 @@ public class JwtFilter extends OncePerRequestFilter{
 
             // 만료 전이라면 유효한 회원 찾을 수 있도록 (완료)
             if (!jwtUtil.isExpired(token)) {
-                Long id = jwtUtil.getId(token);
-                UserDetails userDetails = new UserDetails() {
-                    @Override
-                    public Collection<? extends GrantedAuthority> getAuthorities() {
-                        Collection<GrantedAuthority> collection = new ArrayList<>();
-                        collection.add(new GrantedAuthority() {
-                            @Override
-                            public String getAuthority() {
-                                return jwtUtil.getRole(token);
-                            }
-                        });
-                        return collection;
-                    }
-
-                    @Override
-                    public String getPassword() {
-                        return null;
-                    }
-
-                    @Override
-                    public String getUsername() {
-                        return null;
-                    }
-
-                    public Long getId()
-                    {
-                        return id;
-                    }
-
-                };
+                String username = jwtUtil.getUsername(token);
 
                 Authentication authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails, null, userDetails.getAuthorities());
+                        new UsernamePasswordAuthenticationToken(username, null, new ArrayList<>());
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 filterChain.doFilter(request, response);
