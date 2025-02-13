@@ -27,7 +27,6 @@ import static org.springframework.http.HttpStatus.FORBIDDEN;
 public class JwtFilter extends OncePerRequestFilter{
 
     private final JwtUtil jwtUtil;
-    private final MemberRepository memberRepository;
 
     @Override
     protected void doFilterInternal(
