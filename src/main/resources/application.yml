@@ -1,0 +1,16 @@
+spring:
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        format_sql: true
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+
+jwt:
+  secret: ${JWT_SECRET}
