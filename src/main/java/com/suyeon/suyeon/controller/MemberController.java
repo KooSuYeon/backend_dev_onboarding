@@ -3,6 +3,7 @@ package com.suyeon.suyeon.controller;
 
 import com.suyeon.suyeon.dto.*;
 import com.suyeon.suyeon.service.MemberService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -28,8 +29,8 @@ public class MemberController {
 
     @PostMapping("/sign")
     public ResponseEntity<SignResponseDto> sign(
-            @RequestBody SignRequestDto dto) {
-        SignResponseDto responseDto = memberService.sign(dto);
+            @RequestBody SignRequestDto dto, HttpServletResponse response) {
+        SignResponseDto responseDto = memberService.sign(dto, response);
 
         return ResponseEntity.status(OK).body(responseDto);
     }

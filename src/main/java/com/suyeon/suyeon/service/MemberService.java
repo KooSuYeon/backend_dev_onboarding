@@ -4,11 +4,12 @@ import com.suyeon.suyeon.config.JwtUtil;
 import com.suyeon.suyeon.dto.*;
 import com.suyeon.suyeon.entity.Member;
 import com.suyeon.suyeon.repository.MemberRepository;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.dao.DuplicateKeyException;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -52,7 +53,7 @@ public class MemberService {
         return responseDto;
     }
 
-    public SignResponseDto sign(SignRequestDto requestDto)
+    public SignResponseDto sign(SignRequestDto requestDto, HttpServletResponse response)
     {
         Member member = memberRepository.findByUsername(requestDto.getUsername())
                 .orElseThrow(() -> new UsernameNotFoundException("해당 유저는 존재하지 않습니다 : " +requestDto.getUsername()));
@@ -62,23 +63,32 @@ public class MemberService {
         }
         String accessToken = jwtUtil.createJwt(member.getUsername(), "access", "suyeon", ACCESS_TOKEN_VALIDITY_DURATION);
 
-        if (member.getRefreshToken() == null || jwtUtil.isExpired(member.getRefreshToken()))
-        {
-            String refreshToken = jwtUtil.createJwt(member.getUsername(), "refresh", "suyeon", REFRESH_TOKEN_VALIDITY_DURATION);
+        String refreshToken = member.getRefreshToken();
+        if (refreshToken == null || jwtUtil.isExpired(refreshToken)) {
+            refreshToken = jwtUtil.createJwt(member.getUsername(), "refresh", "suyeon", REFRESH_TOKEN_VALIDITY_DURATION);
             member.setRefreshToken(refreshToken);
             memberRepository.save(member);
         }
+
+
+        Cookie refreshTokenCookie = new Cookie("refresh", refreshToken);
+        refreshTokenCookie.setHttpOnly(true);
+        refreshTokenCookie.setPath("/");
+        refreshTokenCookie.setMaxAge(7 * 24 * 60 * 60);
+        refreshTokenCookie.setAttribute("SameSite", "Strict");
+        response.addCookie(refreshTokenCookie);
 
         SignResponseDto responseDto = new SignResponseDto();
         responseDto.setToken(accessToken);
         return responseDto;
     }
 
-    public ProfileResponseDto profile(String username)
-    {
-        Member member = memberRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("해당 유저는 존재하지 않습니다 : " + username));
+        public ProfileResponseDto profile(String username)
+        {
+            Member member = memberRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("해당 유저는 존재하지 않습니다 : " + username));
 
-        return modelMapper.map(member, ProfileResponseDto.class);
+            return modelMapper.map(member, ProfileResponseDto.class);
 
-    }
+        }
+
 }
