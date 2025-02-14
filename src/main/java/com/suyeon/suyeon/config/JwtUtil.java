@@ -1,6 +1,6 @@
 package com.suyeon.suyeon.config;
 
-import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -24,12 +24,11 @@ public class JwtUtil {
                         secret.getBytes(StandardCharsets.UTF_8), Jwts.SIG.HS256.key().build().getAlgorithm());
     }
 
-    public String createJwt(Long id, String type, String role, String issuer, Long expiredMs) {
+    public String createJwt(String username, String type, String issuer, Long expiredMs) {
 
         return Jwts.builder()
-                .claim("id", id)
+                .claim("username", username)
                 .claim("type", type)
-                .claim("role", role)
                 .claim("iss", issuer)
 
                 .issuedAt(new Date(System.currentTimeMillis()))
@@ -38,24 +37,15 @@ public class JwtUtil {
                 .compact();
     }
 
-    public Long getId(String token) {
+
+    public String getUsername(String token) {
 
         return Jwts.parser()
                 .verifyWith(secretKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload()
-                .get("id", Long.class);
-    }
-
-    public String getRole(String token) {
-
-        return Jwts.parser()
-                .verifyWith(secretKey)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
-                .get("role", String.class);
+                .get("username", String.class);
     }
 
     public Boolean isExpired(String token) {
@@ -68,26 +58,47 @@ public class JwtUtil {
                     .getPayload()
                     .getExpiration()
                     .before(new Date());
-        } catch (ExpiredJwtException e) {
+        } catch (Exception e) {
             return true;
         }
     }
 
-    public Boolean isRefreshable(String token) {
+    public Boolean isAccessToken(String token) {
         try {
-            Date issuedAt = Jwts.parser()
+            String tokenType = Jwts.parser()
                     .verifyWith(secretKey)
                     .build()
                     .parseSignedClaims(token)
                     .getPayload()
-                    .getIssuedAt();
+                    .get("type", String.class);
 
-            if (issuedAt == null) {
+            return "access".equals(tokenType);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+
+
+    public Boolean isRefreshable(String token) {
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+
+            Date issuedAt = claims.getIssuedAt();
+            Date expiration = claims.getExpiration();
+
+            if (issuedAt == null || expiration == null) {
                 return false;
             }
 
-            long diffInMillis = new Date().getTime() - issuedAt.getTime();
-            return diffInMillis >= 30 * 60 * 1000;
+            long halfLife = (expiration.getTime() - issuedAt.getTime()) / 2;
+            long refreshThreshold = issuedAt.getTime() + halfLife;
+
+            return new Date().getTime() >= refreshThreshold;
         } catch (Exception e) {
             return false;
         }

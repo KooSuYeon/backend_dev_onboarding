@@ -25,6 +25,7 @@ public class Member extends BaseTimeEntity implements UserDetails {
     private String username;
     private String password;
     private String nickname;
+    private String refreshToken;
 
     private String role = "ROLE_USER";
     @Override
