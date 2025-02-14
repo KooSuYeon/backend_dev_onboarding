@@ -8,8 +8,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.HashMap;
-import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -27,15 +25,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<String> handleBadCredentialsException(BadCredentialsException e) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
-    }
-
-    @ExceptionHandler(TokenUpgradeRequiredException.class)
-    public ResponseEntity<Map<String, Object>> handleTokenUpgradeRequired(TokenUpgradeRequiredException ex) {
-        Map<String, Object> responseBody = new HashMap<>();
-        responseBody.put("message", ex.getMessage());
-        responseBody.put("accessToken", ex.getAccessToken());
-
-        return ResponseEntity.status(HttpStatus.UPGRADE_REQUIRED).body(responseBody);
     }
 }
 

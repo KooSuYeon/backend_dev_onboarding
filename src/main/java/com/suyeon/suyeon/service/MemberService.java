@@ -43,6 +43,8 @@ public class MemberService {
         member.setRole("ROLE_USER");
         String encodedPassword = passwordEncoder.encode(requestDto.getPassword());
         member.setPassword(encodedPassword);
+        String refreshToken = jwtUtil.createJwt(member.getUsername(), "refresh", "suyeon", REFRESH_TOKEN_VALIDITY_DURATION);
+        member.setRefreshToken(refreshToken);
         memberRepository.save(member);
 
         List<AuthorityDto> authorities = new ArrayList<>();
@@ -61,21 +63,22 @@ public class MemberService {
         if (!passwordEncoder.matches(requestDto.getPassword(), member.getPassword())) {
             throw new BadCredentialsException("비밀번호가 일치하지 않습니다!");
         }
-        String accessToken = jwtUtil.createJwt(member.getUsername(), "access", "suyeon", ACCESS_TOKEN_VALIDITY_DURATION);
 
         String refreshToken = member.getRefreshToken();
-        if (refreshToken == null || jwtUtil.isExpired(refreshToken)) {
+        if (jwtUtil.isExpired(member.getRefreshToken()) || member.getRefreshToken() == null)
+        {
             refreshToken = jwtUtil.createJwt(member.getUsername(), "refresh", "suyeon", REFRESH_TOKEN_VALIDITY_DURATION);
             member.setRefreshToken(refreshToken);
             memberRepository.save(member);
         }
-
+        String accessToken = jwtUtil.createJwt(member.getUsername(), "access", "suyeon", ACCESS_TOKEN_VALIDITY_DURATION);
 
         Cookie refreshTokenCookie = new Cookie("refresh", refreshToken);
         refreshTokenCookie.setHttpOnly(true);
+        refreshTokenCookie.setSecure(false);
         refreshTokenCookie.setPath("/");
         refreshTokenCookie.setMaxAge(7 * 24 * 60 * 60);
-        refreshTokenCookie.setAttribute("SameSite", "Strict");
+        refreshTokenCookie.setAttribute("SameSite", "Lax");
         response.addCookie(refreshTokenCookie);
 
         SignResponseDto responseDto = new SignResponseDto();
@@ -83,12 +86,11 @@ public class MemberService {
         return responseDto;
     }
 
-        public ProfileResponseDto profile(String username)
-        {
-            Member member = memberRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("해당 유저는 존재하지 않습니다 : " + username));
+    public ProfileResponseDto profile(String username)
+    {
+        Member member = memberRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("해당 유저는 존재하지 않습니다 : " + username));
 
-            return modelMapper.map(member, ProfileResponseDto.class);
+        return modelMapper.map(member, ProfileResponseDto.class);
 
-        }
-
+    }
 }

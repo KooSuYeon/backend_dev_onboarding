@@ -1,7 +1,6 @@
 package com.suyeon.suyeon.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.suyeon.suyeon.exception.TokenUpgradeRequiredException;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
@@ -10,6 +9,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponseWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -20,7 +20,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,28 +45,47 @@ public class JwtFilter extends OncePerRequestFilter{
         try {
             String token = jwtUtil.resolveToken(request);
 
-            if (!jwtUtil.isAccessToken(token))
-            {
-                sendErrorResponse(response, "ACCESS Token만 보안 토큰으로 이용가능힙니다!");
+            if (!jwtUtil.isAccessToken(token)) {
+                String refreshToken = getRefreshTokenCookie(request);
+                if (refreshToken == null) {
+                    sendErrorResponse(response, "Refresh Token이 없습니다! 재로그인하세요!");
+                    return;
+                }
+
+                log.info("REFRESH : {}", refreshToken);
+
+                if (jwtUtil.isExpired(refreshToken)) {
+                    sendErrorResponse(response, "Refresh Token이 만료되었습니다! 재로그인하세요!");
+                    return;
+                }
+
+                sendErrorResponse(response, "Access Token을 사용했는지 확인하시거나 만료되었는지를 확인하세요!");
                 return;
             }
 
             if (jwtUtil.isRefreshable(token) && !jwtUtil.isExpired(token)) {
-
-                Cookie refreshTokenCookie = getRefreshTokenCookie(request);
-                String refreshToken = refreshTokenCookie.getValue();
-
-                if (jwtUtil.isExpired(refreshToken)) {
-                    sendErrorResponse(response, "Refresh Token이 만료되었습니다! 다시 로그인하세요.");
+                String refreshToken = getRefreshTokenCookie(request);
+                if (refreshToken == null || jwtUtil.isExpired(refreshToken)) {
+                    sendErrorResponse(response, "Refresh Token이 만료되었습니다! 재로그인하세요!");
                     return;
                 }
 
                 String username = jwtUtil.getUsername(token);
-                long ACCESS_TOKEN_VALIDITY_DURATION = 60 * 60 * 1000L;
-                String accessToken = jwtUtil.createJwt(username, "access", "suyeon", ACCESS_TOKEN_VALIDITY_DURATION);
+                Authentication authentication =
+                        new UsernamePasswordAuthenticationToken(username, null, new ArrayList<>());
+                SecurityContextHolder.getContext().setAuthentication(authentication);
 
-                throw new TokenUpgradeRequiredException("프론트 측에서 Authorization의 AccessToken 갱신 요청이 필요합니다!", accessToken);
+                HttpServletResponseWrapper responseWrapper = new HttpServletResponseWrapper(response) {
+                    @Override
+                    public void setStatus(int sc) {
+                        super.setStatus(HttpStatus.ACCEPTED.value());
+                    }
+                };
+
+                filterChain.doFilter(request, responseWrapper);
+                return;
             }
+
 
             if (!jwtUtil.isExpired(token)) {
                 String username = jwtUtil.getUsername(token);
@@ -82,9 +100,7 @@ public class JwtFilter extends OncePerRequestFilter{
 
             sendErrorResponse(response, "만료된 토큰입니다! 다시 로그인하세요!");
 
-        } catch (NullPointerException | ServletException e) {
-            sendErrorResponse(response, "인증이 필요한 토큰입니다!");
-        } catch (MalformedJwtException e) {
+        }  catch (MalformedJwtException e) {
             sendErrorResponse(response, "손상된 토큰입니다! 다시 로그인하세요!");
         } catch (ExpiredJwtException e) {
             sendErrorResponse(response, "만료된 토큰입니다! 다시 로그인하세요!");
@@ -92,19 +108,32 @@ public class JwtFilter extends OncePerRequestFilter{
             sendErrorResponse(response, "지원하지 않은 토큰입니다!");
         } catch (IllegalArgumentException e) {
             sendErrorResponse(response, "클레임이 비어있는 토큰입니다!");
-        } catch (TokenUpgradeRequiredException e)
-        {
-            sendUpgradeResponse(response, e);
+        } catch (Exception e) {
+            sendErrorResponse(response, "알 수 없는 오류가 발생했습니다!");
         }
     }
 
-    private Cookie getRefreshTokenCookie(HttpServletRequest request) {
-        if (request.getCookies() == null) return null;
-        return Arrays.stream(request.getCookies())
-                .filter(cookie -> "refresh".equals(cookie.getName()))
-                .findFirst()
-                .orElse(null);
+    private String getRefreshTokenCookie(HttpServletRequest request) {
+        if (request.getCookies() == null) {
+            return null;
+        }
+
+        Cookie[] cookies = request.getCookies();
+        Cookie refreshCookie = null;
+
+        for (Cookie cookie : cookies) {
+            if ("refresh".equals(cookie.getName())) {
+                refreshCookie = cookie;
+                break;
+            }
+        }
+        if (refreshCookie == null) {
+            return null;
+        } else {
+            return refreshCookie.getValue();
+        }
     }
+
 
     private boolean isExemptPath(String servletPath) {
         return servletPath.startsWith("/api/members/signup")
@@ -116,18 +145,10 @@ public class JwtFilter extends OncePerRequestFilter{
     private void sendErrorResponse(HttpServletResponse response, String message) throws IOException {
         response.setStatus(FORBIDDEN.value());
         response.setCharacterEncoding("UTF-8");
-        response.setContentType("text/plain; charset=UTF-8");
-        response.getWriter().write(message);
-    }
-
-    private void sendUpgradeResponse(HttpServletResponse response, TokenUpgradeRequiredException e) throws IOException {
-        response.setStatus(HttpStatus.UPGRADE_REQUIRED.value());
-        response.setCharacterEncoding("UTF-8");
         response.setContentType("application/json");
 
         Map<String, Object> responseBody = new HashMap<>();
-        responseBody.put("message", e.getMessage());
-        responseBody.put("access", e.getAccessToken());
+        responseBody.put("message", message);
 
         ObjectMapper objectMapper = new ObjectMapper();
         response.getWriter().write(objectMapper.writeValueAsString(responseBody));
