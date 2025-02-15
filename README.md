@@ -1,14 +1,14 @@
 # backend_dev_onboarding_구수연
 
-AWS 배포 버전 : http://ec2-43-201-105-28.ap-northeast-2.compute.amazonaws.com:8080/
+AWS 배포 버전 : http://ec2-3-36-63-254.ap-northeast-2.compute.amazonaws.com:8080/
 (EC2 & RDS 이용)
 
 
 <a id="summary"></a>
-### 📃 Spring Boot Project Setting 
+### 📃 Spring Boot Project Setting
 
 - Version : 3.4.2
-- Language : Java 17 
+- Language : Java 17
 
 Dependencies
 - Lombok: Getter/Setter, 생성자 등을 자동 생성하여 코드 간결화
@@ -61,7 +61,7 @@ Dependencies
 public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
 
 ```
-SecurityFilterChain은 Spring Security의 필터 체인을 설정하는 객체입니다. Spring Security에서는 요청에 대한 인증과 권한 부여를 필터 체인을 통해 처리합니다. 
+SecurityFilterChain은 Spring Security의 필터 체인을 설정하는 객체입니다. Spring Security에서는 요청에 대한 인증과 권한 부여를 필터 체인을 통해 처리합니다.
 
 ### 2. HTTP Basic 인증 비활성화
 
@@ -92,7 +92,7 @@ addFilterBefore() 메서드는 지정된 필터를 기존의 필터 체인에 �
 ---
 
 <a id="jwt-setting"></a>
-### 🔑 JWT 세팅 
+### 🔑 JWT 세팅
 
 <details> <summary>클릭하여 JWT 설정 보기</summary>
 
@@ -142,10 +142,10 @@ Spring Security에서 Filter의 역할:
 - 헤더에 AccessToken가 아니라 RefreshToken가 들어올 때 : 403 ERROR
 - 헤더에 토큰이 들어오지 않을 때 : 401 ERROR
 
-- 프론트 측에서는 1시간 주기의 로그인 (Auth) 가능 시간을 연장시키기 위해서는 
+- 프론트 측에서는 1시간 주기의 로그인 (Auth) 가능 시간을 연장시키기 위해서는
 - 로그인 API (/api/members/sign)을 호출해 다시 body로 AccessToken을 받아와 헤더에 재할당 해줘 로그인을 연장해줍니다.
 - 이때 보안을 위해서 프론트 측 Cookie에서 refreshToken를 꺼내 RefreshToken이 만료되었는지/Cookie에 RefreshToken이 있는지/RefreshToken의 username과 AccessToken의 username이 일치하는지
-- 여부를 확인한 후에 모든 조건에 해당한다면은 갱신할 조건 (202 Accpeted)에 해당한다면 응답코드를 보내줍니다. 
+- 여부를 확인한 후에 모든 조건에 해당한다면은 갱신할 조건 (202 Accpeted)에 해당한다면 응답코드를 보내줍니다.
 
 ---
 ### HTTPS 로 바꿔 보안 높이는 방법 (예정)
@@ -156,18 +156,18 @@ Spring Security에서 Filter의 역할:
 - refreshTokenCookie.setAttribute("SameSite", "Strict"); // CSRF 공격 방지 강화
 ```
 
-로 수정해줍니다. 
+로 수정해줍니다.
 
 </details>
 
 ---
 <a id="api-docs"></a>
-### 🖋️ API 명세서 
+### 🖋️ API 명세서
 
 <details> <summary>클릭하여 API 명세서 보기</summary>
 
 1. 회원가입
-- `http://ec2-43-201-105-28.ap-northeast-2.compute.amazonaws.com:8080/api/members/signup`
+- `http://ec2-3-36-63-254.ap-northeast-2.compute.amazonaws.com:8080/api/members/signup`
 - Request (Body)
 ```
 {
@@ -191,7 +191,7 @@ Spring Security에서 Filter의 역할:
 ---
 
 2. 로그인 </br>
-- `http://ec2-43-201-105-28.ap-northeast-2.compute.amazonaws.com:8080/api/members/sign`
+- `http://ec2-3-36-63-254.ap-northeast-2.compute.amazonaws.com:8080/api/members/sign`
 - Request (Body)
 ```
 {
@@ -214,7 +214,7 @@ Spring Security에서 Filter의 역할:
 ```
 ---
 3. 회원조회 </br>
-- `http://ec2-43-201-105-28.ap-northeast-2.compute.amazonaws.com:8080/api/members/profile`
+- `http://ec2-3-36-63-254.ap-northeast-2.compute.amazonaws.com:8080/api/members/profile`
 - Request (Header)
 ```
 {
@@ -256,7 +256,7 @@ Spring Security에서 Filter의 역할:
 No Auth (Spring Security를 적용할 필요가 없기 때문에 빠른 테스트, 단위테스트를 적용합니다. (MockitoExtension.class))
 - 회원가입 : 정상 생성 (201), 이미 존재하는 username인데 생성 (409)
 - 로그인 : 정상 로그인 (200), 회원 존재 안할 때 로그인 시도 (404), 비밀번호 오류 (401)
-</br>
+  </br>
 
 Auth (통합 테스트를 위한 SpringExtension.class 적용합니다.)
 - 프로필 조회 : 정상 조회 (200), (Auth 자체가 JWT 토큰으로 하고 있기 때문에 에러 부분은 JwtUtilTest에서 동작합니다.)
