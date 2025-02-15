@@ -61,6 +61,12 @@ public class JwtFilter extends OncePerRequestFilter {
                     return;
                 }
 
+                if (jwtUtil.getUsername(token).equals(jwtUtil.getUsername(refreshToken)))
+                {
+                    sendErrorResponse(response, "Refresh Token 사용자와 Access Token 사용자가 불일치합니다! 재로그인하세요!", HttpStatus.UNAUTHORIZED);
+                    return;
+                }
+
                 sendErrorResponse(response, "Access Token을 사용했는지 확인하시거나 만료되었는지를 확인하세요!", HttpStatus.FORBIDDEN);
                 return;
             }
