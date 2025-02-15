@@ -1,6 +1,7 @@
 package com.suyeon.suyeon.config;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -36,6 +37,18 @@ public class JwtUtil {
                 .signWith(secretKey)
                 .compact();
     }
+
+    public void validateToken(String token) {
+        try {
+            Jwts.parser()
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseSignedClaims(token);
+        } catch (ExpiredJwtException e) {
+            throw new ExpiredJwtException(null, null, "토큰이 만료되었습니다.");
+        }
+    }
+
 
 
     public String getUsername(String token) {
