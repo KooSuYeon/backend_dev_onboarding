@@ -1,5 +1,9 @@
 # backend_dev_onboarding_구수연
 
+AWS 배포 버전 : http://ec2-43-201-105-28.ap-northeast-2.compute.amazonaws.com:8080/
+(EC2 & RDS 이용)
+
+
 <a id="summary"></a>
 ### 📃 Spring Boot Project Setting 
 
@@ -163,7 +167,7 @@ Spring Security에서 Filter의 역할:
 <details> <summary>클릭하여 API 명세서 보기</summary>
 
 1. 회원가입
-- `/api/members/signup`
+- `http://ec2-43-201-105-28.ap-northeast-2.compute.amazonaws.com:8080/api/members/signup`
 - Request (Body)
 ```
 {
@@ -187,7 +191,7 @@ Spring Security에서 Filter의 역할:
 ---
 
 2. 로그인 </br>
-- `/api/members/sign`
+- `http://ec2-43-201-105-28.ap-northeast-2.compute.amazonaws.com:8080/api/members/sign`
 - Request (Body)
 ```
 {
@@ -210,7 +214,7 @@ Spring Security에서 Filter의 역할:
 ```
 ---
 3. 회원조회 </br>
-- `/api/members/profile`
+- `http://ec2-43-201-105-28.ap-northeast-2.compute.amazonaws.com:8080/api/members/profile`
 - Request (Header)
 ```
 {
