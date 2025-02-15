@@ -23,11 +23,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.springframework.http.HttpStatus.FORBIDDEN;
-
 @Slf4j
 @RequiredArgsConstructor
-public class JwtFilter extends OncePerRequestFilter{
+public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
 
@@ -45,28 +43,34 @@ public class JwtFilter extends OncePerRequestFilter{
         try {
             String token = jwtUtil.resolveToken(request);
 
-            if (!jwtUtil.isAccessToken(token)) {
-                String refreshToken = getRefreshTokenCookie(request);
-                if (refreshToken == null) {
-                    sendErrorResponse(response, "Refresh Token이 없습니다! 재로그인하세요!");
-                    return;
-                }
-
-                log.info("REFRESH : {}", refreshToken);
-
-                if (jwtUtil.isExpired(refreshToken)) {
-                    sendErrorResponse(response, "Refresh Token이 만료되었습니다! 재로그인하세요!");
-                    return;
-                }
-
-                sendErrorResponse(response, "Access Token을 사용했는지 확인하시거나 만료되었는지를 확인하세요!");
+            if (token == null) {
+                sendErrorResponse(response, "토큰이 없습니다! 토큰을 넣어서 인가해주세요!", HttpStatus.UNAUTHORIZED);
                 return;
             }
 
-            if (jwtUtil.isRefreshable(token) && !jwtUtil.isExpired(token)) {
+            if (!jwtUtil.isAccessToken(token)) {
                 String refreshToken = getRefreshTokenCookie(request);
-                if (refreshToken == null || jwtUtil.isExpired(refreshToken)) {
-                    sendErrorResponse(response, "Refresh Token이 만료되었습니다! 재로그인하세요!");
+                if (refreshToken == null) {
+                    sendErrorResponse(response, "Refresh Token이 없습니다! 재로그인하세요!", HttpStatus.UNAUTHORIZED);
+                    return;
+                }
+
+                if (jwtUtil.isExpired(token))
+                {
+                    sendErrorResponse(response, "Refresh Token이 만료되었습니다! 재로그인하세요!", HttpStatus.UNAUTHORIZED);
+                    return;
+                }
+
+                sendErrorResponse(response, "Access Token을 사용했는지 확인하시거나 만료되었는지를 확인하세요!", HttpStatus.FORBIDDEN);
+                return;
+            }
+
+            jwtUtil.validateToken(token);
+
+            if (jwtUtil.isRefreshable(token)) {
+                String refreshToken = getRefreshTokenCookie(request);
+                if (refreshToken == null) {
+                    sendErrorResponse(response, "Refresh Token이 없습니다! 재로그인하세요!", HttpStatus.UNAUTHORIZED);
                     return;
                 }
 
@@ -74,7 +78,6 @@ public class JwtFilter extends OncePerRequestFilter{
                 Authentication authentication =
                         new UsernamePasswordAuthenticationToken(username, null, new ArrayList<>());
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-
                 HttpServletResponseWrapper responseWrapper = new HttpServletResponseWrapper(response) {
                     @Override
                     public void setStatus(int sc) {
@@ -86,30 +89,22 @@ public class JwtFilter extends OncePerRequestFilter{
                 return;
             }
 
+            String username = jwtUtil.getUsername(token);
+            Authentication authentication =
+                    new UsernamePasswordAuthenticationToken(username, null, new ArrayList<>());
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            filterChain.doFilter(request, response);
 
-            if (!jwtUtil.isExpired(token)) {
-                String username = jwtUtil.getUsername(token);
-
-                Authentication authentication =
-                        new UsernamePasswordAuthenticationToken(username, null, new ArrayList<>());
-
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-                filterChain.doFilter(request, response);
-                return;
-            }
-
-            sendErrorResponse(response, "만료된 토큰입니다! 다시 로그인하세요!");
-
-        }  catch (MalformedJwtException e) {
-            sendErrorResponse(response, "손상된 토큰입니다! 다시 로그인하세요!");
+        } catch (MalformedJwtException e) {
+            sendErrorResponse(response, "손상된 토큰입니다! 다시 로그인하세요!", HttpStatus.UNAUTHORIZED);
         } catch (ExpiredJwtException e) {
-            sendErrorResponse(response, "만료된 토큰입니다! 다시 로그인하세요!");
+            sendErrorResponse(response, "만료된 토큰입니다! 다시 로그인하세요!", HttpStatus.UNAUTHORIZED);
         } catch (UnsupportedJwtException e) {
-            sendErrorResponse(response, "지원하지 않은 토큰입니다!");
+            sendErrorResponse(response, "지원하지 않는 토큰입니다!", HttpStatus.BAD_REQUEST);
         } catch (IllegalArgumentException e) {
-            sendErrorResponse(response, "클레임이 비어있는 토큰입니다!");
+            sendErrorResponse(response, "클레임이 비어있는 토큰입니다!", HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
-            sendErrorResponse(response, "알 수 없는 오류가 발생했습니다!");
+            sendErrorResponse(response, "알 수 없는 오류가 발생했습니다!", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -118,22 +113,13 @@ public class JwtFilter extends OncePerRequestFilter{
             return null;
         }
 
-        Cookie[] cookies = request.getCookies();
-        Cookie refreshCookie = null;
-
-        for (Cookie cookie : cookies) {
+        for (Cookie cookie : request.getCookies()) {
             if ("refresh".equals(cookie.getName())) {
-                refreshCookie = cookie;
-                break;
+                return cookie.getValue();
             }
         }
-        if (refreshCookie == null) {
-            return null;
-        } else {
-            return refreshCookie.getValue();
-        }
+        return null;
     }
-
 
     private boolean isExemptPath(String servletPath) {
         return servletPath.startsWith("/api/members/signup")
@@ -142,8 +128,8 @@ public class JwtFilter extends OncePerRequestFilter{
                 || servletPath.startsWith("/favicon.ico");
     }
 
-    private void sendErrorResponse(HttpServletResponse response, String message) throws IOException {
-        response.setStatus(FORBIDDEN.value());
+    private void sendErrorResponse(HttpServletResponse response, String message, HttpStatus status) throws IOException {
+        response.setStatus(status.value());
         response.setCharacterEncoding("UTF-8");
         response.setContentType("application/json");
 
