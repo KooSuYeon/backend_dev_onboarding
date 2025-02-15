@@ -1,5 +1,10 @@
 # backend_dev_onboarding_구수연
 
+Branch 관리 전략 : 
+- 배포 버전 : staging 브랜치
+- 개발 버전 : main 브랜치 
+- docs를 제외한 사항은 무조건 PR을 거친 브랜치에 merge 전략 (순서 : main -> staging)
+
 AWS 배포 버전 : http://ec2-3-36-63-254.ap-northeast-2.compute.amazonaws.com:8080/
 (EC2 & RDS 이용)
 
@@ -26,6 +31,7 @@ Dependencies
 5. [🔄 토큰 발행과 검증](#access-refresh)
 6. [🖋 API 명세서](#api-docs)
 7. [🛠 JUnit 테스트](#junit)
+8. [🌐 AWS 배포 ](#deploy)
 
 ---
 
@@ -262,5 +268,29 @@ Auth (통합 테스트를 위한 SpringExtension.class 적용합니다.)
 - 프로필 조회 : 정상 조회 (200), (Auth 자체가 JWT 토큰으로 하고 있기 때문에 에러 부분은 JwtUtilTest에서 동작합니다.)
 - WithMockCustomUser : 테스트 코드 동작을 위한 사용자 생성
 - WithCustomMockUserSecurityContextFactory: 사용자가 통과할 SecurityContext 생성
+
+</details>
+
+---
+
+<a id="deploy"></a>
+### 🌐 AWS 배포 
+
+<details> <summary>클릭하여 AWS 배포 보기</summary>
+
+인스턴스 스펙
+- Ubuntu Server 22.04 LTS 64비트
+- 인스턴스 유형 : t3.small 
+- 스토리지 : 30GiB
+
+EC2 재배포
+- 최초 배포에 t2.micro를 택했습니다. 
+- 하지만 cpu 성능이 너무 낮았기 때문에 몇 번의 요청만으로 cpu 사용률이 100%가 되어 서버가 다운되는 문제가 발생했었습니다.
+- 대안 방법이 두 가지가 있었는데 (cpu 업그레이드, 인스턴스 업그레이드) cpu 업그레이드 보다 좀 더 안정적인 방법인 인스턴스 업그레이드 방법 선택해 재배포하게 되었습니다.
+
+
+스프링 부트 서버 실행
+- gradle로 build 파일 생성 후 jar 파일 실행 (내장 Tomcat이 실행됩니다.)
+
 
 </details>
