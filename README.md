@@ -41,9 +41,9 @@ Branch 관리 전략 :
 - 개발 버전 : main 브랜치
 - docs를 제외한 사항은 무조건 PR을 거친 브랜치에 merge 전략 (순서 : main -> staging)
 
-AWS 배포 버전 : http://ec2-3-36-63-254.ap-northeast-2.compute.amazonaws.com:8080/
+- AWS 배포 버전 : http://ec2-3-36-63-254.ap-northeast-2.compute.amazonaws.com:8080/
 (EC2 & RDS 이용)
-배포 API 문서 : http://ec2-3-36-63-254.ap-northeast-2.compute.amazonaws.com:8080/swagger-ui/index.html
+- 배포 API 문서 : http://ec2-3-36-63-254.ap-northeast-2.compute.amazonaws.com:8080/swagger-ui/index.html
 
 개발 기한 :
 - 2/13, 2/14 (회원가입, JWT 인증 및 로그인)
@@ -320,8 +320,8 @@ EC2 재배포
 <details> <summary>클릭하여 Swagger 이용한 API 명세서 자동화 보기</summary>
 
 
-배포 Swagger 주소 : http://ec2-3-36-63-254.ap-northeast-2.compute.amazonaws.com:8080/swagger-ui/indes.html
-로컬 주소 : http://localhost:8080/swagger-ui/index.html
+- 배포 Swagger 주소 : http://ec2-3-36-63-254.ap-northeast-2.compute.amazonaws.com:8080/swagger-ui/indes.html
+- 로컬 주소 : http://localhost:8080/swagger-ui/index.html
 
 전략 : 
 - 코드 가독성을 위해 실제 Controller와 SwaggerController를 분리
