@@ -1,11 +1,11 @@
 package com.suyeon.suyeon.config;
 
-import com.suyeon.suyeon.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -42,6 +42,10 @@ public class SecurityConfig {
                         requests -> {
                             requests
                                     .requestMatchers(
+                                            "/swagger-ui/**",
+                                            "/swagger-ui/index.html",
+                                            "/api/v1/api-docs",
+                                            "/api/v1/api-docs/**",
                                             "/favicon.ico",
                                             "/api/members/signup",
                                             "/api/members/sign",
@@ -50,5 +54,15 @@ public class SecurityConfig {
                             requests.requestMatchers("/api/**").authenticated();
                         })
                 .build();
+    }
+
+    @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        return web -> web.ignoring().requestMatchers(
+                "/swagger-ui/**",
+                "/swagger-ui.html",
+                "/api/v1/api-docs",
+                "/api/v1/api-docs/**"
+        );
     }
 }

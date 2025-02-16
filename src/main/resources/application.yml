@@ -14,3 +14,20 @@ spring:
 
 jwt:
   secret: ${JWT_SECRET}
+
+springdoc:
+  swagger-ui:
+    groups-order: DESC
+    tags-sorter: alpha
+    operations-sorter: method
+    disable-swagger-default-url: true
+    display-request-duration: true
+    default-models-expand-depth: -1
+    default-model-expand-depth: -1
+  api-docs:
+    path: /api/v1/api-docs
+  show-actuator: true
+  writer-with-default-pretty-printer: true
+  model-and-view-allowed: true
+  paths-to-match:
+    - /api/**
