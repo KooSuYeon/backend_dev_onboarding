@@ -312,6 +312,8 @@ EC2 재배포
 
 </details>
 
+---
+
 <a id="swagger"></a>
 ### 🐸 Swagger 이용한 API 명세서 자동화
 
@@ -328,6 +330,8 @@ EC2 재배포
 
 
 </details>
+
+---
 
 <a id="refactor"></a>
 ### 🤖AI Assistance를 통한 코드 개선
