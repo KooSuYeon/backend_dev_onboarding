@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Service
@@ -37,6 +38,11 @@ public class MemberService {
         if (memberRepository.existsByUsername(requestDto.getUsername()))
             throw new DuplicateKeyException("이미 사용 중인 ID 입니다!");
 
+        String password = requestDto.getPassword();
+        if (!isValidPassword(password)) {
+            throw new IllegalArgumentException("비밀번호는 최소 8자 이상, 대소문자, 숫자, 특수문자를 포함해야 합니다.");
+        }
+
         Member member = new Member();
         member.setUsername(requestDto.getUsername());
         member.setNickname(requestDto.getNickname());
@@ -53,6 +59,13 @@ public class MemberService {
         SignupResponseDto responseDto = modelMapper.map(member, SignupResponseDto.class);
         responseDto.setAuthorities(authorities);
         return responseDto;
+    }
+
+    private boolean isValidPassword(String password) {
+
+        String regex = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$";
+        Pattern pattern = Pattern.compile(regex);
+        return pattern.matcher(password).matches();
     }
 
     public SignResponseDto sign(SignRequestDto requestDto, HttpServletResponse response)
