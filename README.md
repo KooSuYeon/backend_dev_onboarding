@@ -1,26 +1,5 @@
 # backend_dev_onboarding_구수연
 
-Branch 관리 전략 : 
-- 배포 버전 : staging 브랜치
-- 개발 버전 : main 브랜치 
-- docs를 제외한 사항은 무조건 PR을 거친 브랜치에 merge 전략 (순서 : main -> staging)
-
-AWS 배포 버전 : http://ec2-3-36-63-254.ap-northeast-2.compute.amazonaws.com:8080/
-(EC2 & RDS 이용)
-
-
-<a id="summary"></a>
-### 📃 Spring Boot Project Setting
-
-- Version : 3.4.2
-- Language : Java 17
-
-Dependencies
-- Lombok: Getter/Setter, 생성자 등을 자동 생성하여 코드 간결화
-- Spring Web: REST API 및 웹 애플리케이션 개발 지원
-- Spring Boot DevTools: 코드 변경 시 자동 리스타트 및 개발 편의성 제공
-- Spring Data JPA: ORM을 활용한 데이터베이스 접근 및 관리
-- MySQL Driver: MySQL과의 연결을 위한 JDBC 드라이버
 
 ---
 ## 📑 목차
@@ -32,8 +11,46 @@ Dependencies
 6. [🖋 API 명세서](#api-docs)
 7. [🛠 JUnit 테스트](#junit)
 8. [🌐 AWS 배포 ](#deploy)
+9. [🐸 Swagger 이용한 API 명세서 자동화](#swagger)
+10. [🤖AI Assistance를 통한 코드 개선](#refactor)
 
 ---
+
+<a id="summary"></a>
+### 📃 프로젝트 개요
+
+<details>
+
+<summary>클릭하여 스프링 부트 프로젝트 세팅 보기</summary>
+
+- Version : 3.4.2
+- Language : Java 17
+
+Dependencies
+- Lombok: Getter/Setter, 생성자 등을 자동 생성하여 코드 간결화
+- Spring Web: REST API 및 웹 애플리케이션 개발 지원
+- Spring Boot DevTools: 코드 변경 시 자동 리스타트 및 개발 편의성 제공
+- Spring Data JPA: ORM을 활용한 데이터베이스 접근 및 관리
+- MySQL Driver: MySQL과의 연결을 위한 JDBC 드라이버
+
+</details>
+
+
+Branch 관리 전략 :
+- 배포 버전 : staging 브랜치
+- 개발 버전 : main 브랜치
+- docs를 제외한 사항은 무조건 PR을 거친 브랜치에 merge 전략 (순서 : main -> staging)
+
+AWS 배포 버전 : http://ec2-3-36-63-254.ap-northeast-2.compute.amazonaws.com:8080/
+(EC2 & RDS 이용)
+배포 API 문서 : http://ec2-3-36-63-254.ap-northeast-2.compute.amazonaws.com:8080/swagger-ui/index.html
+
+개발 기한 :
+- 2/13, 2/14 (회원가입, JWT 인증 및 로그인)
+- 2/15 (배포, 테스트 코드 작성, JWT 개선)
+- 2/16 (Swagger 연동)
+---
+
 
 <a id="entity"></a>
 ### 📝 엔터티
@@ -291,6 +308,55 @@ EC2 재배포
 
 스프링 부트 서버 실행
 - gradle로 build 파일 생성 후 jar 파일 실행 (내장 Tomcat이 실행됩니다.)
+
+
+</details>
+
+<a id="swagger"></a>
+### 🐸 Swagger 이용한 API 명세서 자동화
+
+<details> <summary>클릭하여 Swagger 이용한 API 명세서 자동화 보기</summary>
+
+
+배포 Swagger 주소 : http://ec2-3-36-63-254.ap-northeast-2.compute.amazonaws.com:8080/swagger-ui/indes.html
+로컬 주소 : http://localhost:8080/swagger-ui/index.html
+
+전략 : 
+- 코드 가독성을 위해 실제 Controller와 SwaggerController를 분리
+- 각 API 명세서에는 요청 성공 Response 예시를 보여줌
+- 접속 가능 url 접근 시 자동으로 명세서 전체 페이지 : /api/v1/api-docs 로 렌더링
+
+
+</details>
+
+<a id="refactor"></a>
+### 🤖AI Assistance를 통한 코드 개선
+
+<details> 
+<summary>클릭하여 AI Assistance를 통한 코드 개선 보기</summary>
+
+피드백
+```
+이전: 비밀번호가 임의로 설정되어도 시스템이 이를 확인하지 않았습니다. 이는 약한 비밀번호가 사용될 위험이 있음을 의미합니다.
+변경 후: 비밀번호의 복잡성(대문자, 숫자, 특수문자 등)을 검사하고, 이 규칙을 만족하지 않으면 예외를 발생시켜 저장되지 않게 만듭니다. 이렇게 함으로써 보안이 강화됩니다.
+```
+
+추가(개선)한 코드 부분 (MemberService > signup)
+```
+String password = requestDto.getPassword();
+if (!isValidPassword(password)) {
+    throw new IllegalArgumentException("비밀번호는 최소 8자 이상, 대소문자, 숫자, 특수문자를 포함해야 합니다.");
+}
+
+private boolean isValidPassword(String password) {
+
+    String regex = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$";
+    Pattern pattern = Pattern.compile(regex);
+    return pattern.matcher(password).matches();
+}
+
+```
+
 
 
 </details>
