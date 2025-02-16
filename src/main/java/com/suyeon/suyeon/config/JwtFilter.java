@@ -35,7 +35,6 @@ public class JwtFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String servletPath = request.getServletPath();
-
         if (isExemptPath(servletPath)) {
             filterChain.doFilter(request, response);
             return;
@@ -131,7 +130,11 @@ public class JwtFilter extends OncePerRequestFilter {
         return servletPath.startsWith("/api/members/signup")
                 || servletPath.equals("/api/members/sign")
                 || servletPath.equals("/health")
-                || servletPath.startsWith("/favicon.ico");
+                || servletPath.startsWith("/favicon.ico")
+                || servletPath.startsWith("/swagger-ui/")
+                || servletPath.startsWith("/swagger-ui.html")
+                || servletPath.startsWith("/api/v1/api-docs/")
+                ;
     }
 
     private void sendErrorResponse(HttpServletResponse response, String message, HttpStatus status) throws IOException {
